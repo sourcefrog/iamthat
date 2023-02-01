@@ -23,7 +23,10 @@ fn deserialize_single_strings_abbreviate_lists() {
                 {
                     "Effect": "Allow",
                     "Resource": "*",
-                    "Action": "s3:ListBuckets"
+                    "Action": "s3:ListBuckets",
+                    "NotPrincipal": {
+                        "CanonicalUser": "012345"
+                    }
                 }
             ]
         }
@@ -31,6 +34,7 @@ fn deserialize_single_strings_abbreviate_lists() {
     .unwrap();
     assert_eq!(policy.statement[0].action, ["s3:ListBuckets"]);
     assert_eq!(policy.statement[0].resource, ["*"]);
+    // TODO: Check NotPrincipal; doesn't seem right.
 }
 
 #[test]
