@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": [
+        {
+          "AWS": ["arn:aws:iam::111122223333:user/mateo"]
+        }
+      ],
+      "Action": [
+        "s3:List*",
+        "s3:Put*"
+      ],
+      "Resource": [
+        "arn:aws:s3:::production/*"
+      ]
+    }
+  ]
+}
