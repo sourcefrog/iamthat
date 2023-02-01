@@ -7,7 +7,7 @@ use iamthat::policy;
 fn main() {
     tracing_subscriber::fmt::init();
 
-    let policy_json = read_to_string("example/s3_list.json").unwrap();
+    let policy_json = read_to_string("example/resource_policy/s3_list.json").unwrap();
     let policy: policy::Policy = serde_json::from_str(&policy_json).unwrap();
     println!("{policy:#?}");
     println!();

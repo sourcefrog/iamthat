@@ -4,8 +4,11 @@ use std::fs::read_to_string;
 
 use eyre::Result;
 use indoc::indoc;
+use serde_json::json;
 
 use iamthat::policy::{self, *};
+
+// TODO: Test more types of Action glob.
 
 #[test]
 fn load_policy() -> Result<()> {
@@ -69,6 +72,54 @@ fn deserialize_single_strings_abbreviate_lists() {
     assert_eq!(policy.statement[0].action, ["s3:ListBuckets"]);
     assert_eq!(policy.statement[0].resource, ["*"]);
     // TODO: Check NotPrincipal; doesn't seem right.
+}
+
+#[test]
+fn action_star_matches_in_resource_policy() -> Result<()> {
+    let policy: Policy = serde_json::from_str(indoc! { r#"
+        {
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Resource": "*",
+                    "Action": "*",
+                    "Principal": "*"
+                }
+            ]
+        }
+    "#})?;
+    let request = Request {
+        action: "s3:ListBuckets".to_owned(),
+    };
+    assert_eq!(
+        policy::eval_resource_policy(&policy, &request),
+        Some(Effect::Allow)
+    );
+    Ok(())
+}
+
+#[test]
+fn action_glob_case_insensitive_in_resource_policy() -> Result<()> {
+    let policy: Policy = serde_json::from_value(json! {
+        {
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Resource": "*",
+                    "Action": "s3:*Bucket*",
+                    "Principal": "*"
+                }
+            ]
+        }
+    })?;
+    let request = Request {
+        action: "S3:lISTbUCKETS".to_owned(),
+    };
+    assert_eq!(
+        policy::eval_resource_policy(&policy, &request),
+        Some(Effect::Allow)
+    );
+    Ok(())
 }
 
 #[test]

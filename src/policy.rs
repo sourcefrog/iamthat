@@ -8,8 +8,10 @@
 // * <https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_grammar.html>
 // * <https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html>
 
-use std::fmt;
+use std::{fmt, str::FromStr};
 
+use eyre::{bail, eyre, WrapErr};
+use regex::Regex;
 use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize};
 use tracing::debug;
 
@@ -119,29 +121,62 @@ where
 //     }
 // }
 
-// TODO: Maybe an ActionGlob type.
-fn action_matches(action_pattern: &str, action: &str) -> bool {
-    if action_pattern == "*" {
-        return true;
+/// Some kind of "Action" pattern: a wildcard, a literal, or a glob.
+pub enum ActionGlob {
+    Star,
+    Literal(String),
+    Pattern(Regex),
+}
+
+impl FromStr for ActionGlob {
+    type Err = eyre::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "*" {
+            return Ok(ActionGlob::Star);
+        }
+        let (service, action) = s
+            .split_once(':')
+            .ok_or(eyre!("no colon in action pattern"))?;
+        let service_re = Regex::new(r"^[a-zA-Z0-9]+$").unwrap();
+        if !service_re.is_match(service) {
+            bail!("invalid service {service:?}");
+        }
+        let valid_action = Regex::new(r"^[a-zA-Z0-9*]+$").unwrap();
+        if !valid_action.is_match(action) {
+            bail!("invalid action glob {action:?}");
+        } else if action.contains('*') {
+            let action_re_str = format!("^(?i){service}:{}$", action.replace('*', ".*"));
+            let action_re = Regex::new(&action_re_str).wrap_err_with(|| {
+                "failed to compile action regexp {action_re_str:?} from {action:?}"
+            })?;
+            Ok(ActionGlob::Pattern(action_re))
+        } else {
+            Ok(ActionGlob::Literal(s.to_owned()))
+        }
     }
-    // TODO: Stars should be allowed at any point in the name,
-    // but not in the service name, unless it's just '*' altogether.
-    // TODO: Case-insensitive.
-    if let Some(glob) = action_pattern.strip_suffix('*') {
-        action.starts_with(glob)
-    } else {
-        action == action_pattern
+}
+
+impl ActionGlob {
+    pub fn matches(&self, action: &str) -> bool {
+        match self {
+            ActionGlob::Star => true,
+            ActionGlob::Literal(a) => a.eq_ignore_ascii_case(action),
+            ActionGlob::Pattern(re) => re.is_match(action),
+        }
     }
 }
 
 pub fn eval_resource_policy(policy: &Policy, request: &Request) -> Option<Effect> {
     // Very approximate!
 
+    // TODO: Don't unwrap
+
     // First, does anything deny?
     if let Some(deny_statement) = policy
         .statement
         .iter()
-        .find(|s| s.effect == Effect::Deny && s.matches(request))
+        .find(|s| s.effect == Effect::Deny && s.matches(request).unwrap())
     {
         debug!(?deny_statement, "matches explicit allow");
         return Some(Effect::Allow);
@@ -150,7 +185,7 @@ pub fn eval_resource_policy(policy: &Policy, request: &Request) -> Option<Effect
     if let Some(allow_statement) = policy
         .statement
         .iter()
-        .find(|s| s.effect == Effect::Allow && s.matches(request))
+        .find(|s| s.effect == Effect::Allow && s.matches(request).unwrap())
     {
         debug!(?allow_statement, "matches explicit allow");
         return Some(Effect::Allow);
@@ -161,15 +196,15 @@ pub fn eval_resource_policy(policy: &Policy, request: &Request) -> Option<Effect
 }
 
 impl Statement {
-    pub fn matches(&self, request: &Request) -> bool {
+    pub fn matches(&self, request: &Request) -> eyre::Result<bool> {
         // TODO: More conditions
 
         for statement_action in &self.action {
-            if action_matches(statement_action, &request.action) {
+            if ActionGlob::from_str(statement_action)?.matches(&request.action) {
                 debug!(?request, ?self, "action matches");
-                return true;
+                return Ok(true);
             }
         }
-        false
+        Ok(false)
     }
 }
