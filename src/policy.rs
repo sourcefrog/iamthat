@@ -70,6 +70,7 @@ pub struct Request {
 //     }
 // }
 
+// TODO: Maybe an ActionGlob type.
 fn action_matches(action_pattern: &str, action: &str) -> bool {
     if action_pattern == "*" {
         return true;
@@ -84,44 +85,32 @@ fn action_matches(action_pattern: &str, action: &str) -> bool {
     }
 }
 
-impl Policy {
-    pub fn eval(&self, request: &Request) -> Option<Effect> {
-        // Very approximate!
+pub fn eval_resource_policy(policy: &Policy, request: &Request) -> Option<Effect> {
+    // Very approximate!
 
-        // First, does anything deny?
-        for statement in &self.statement {
-            if statement.effect == Effect::Deny {
-                if statement.matches(request) {
-                    return Some(Effect::Deny);
-                }
-            }
-        }
-
-        if let Some(matched_policy) = self
-            .statement
-            .iter()
-            .filter(|s| s.effect == Effect::Allow && s.matches(request))
-            .next()
-        {
-            debug!(?matched_policy, "matches explicit allow");
-            return Some(Effect::Allow);
-        }
-
-        for statement in &self.statement {
-            if statement.effect == Effect::Deny {
-                if statement.matches(request) {
-                    return Some(Effect::Deny);
-                }
-            }
-        }
-
-        debug!(
-            policy_id = self.id,
-            ?request,
-            "policy does not match request"
-        );
-        None
+    // First, does anything deny?
+    if let Some(deny_statement) = policy
+        .statement
+        .iter()
+        .filter(|s| s.effect == Effect::Deny && s.matches(request))
+        .next()
+    {
+        debug!(?deny_statement, "matches explicit allow");
+        return Some(Effect::Allow);
     }
+
+    if let Some(allow_statement) = policy
+        .statement
+        .iter()
+        .filter(|s| s.effect == Effect::Allow && s.matches(request))
+        .next()
+    {
+        debug!(?allow_statement, "matches explicit allow");
+        return Some(Effect::Allow);
+    }
+
+    debug!(policy.id, ?request, "policy does not match request");
+    None
 }
 
 impl Statement {

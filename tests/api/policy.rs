@@ -4,11 +4,38 @@ use std::fs::read_to_string;
 
 use eyre::Result;
 
-use iamthat::policy::*;
+use iamthat::policy::{self, *};
 
 #[test]
 fn load_policy() -> Result<()> {
-    let json = read_to_string("example/s3_list.json")?;
+    let json = read_to_string("example/resource_policy/s3_list.json")?;
+    let _policy: Policy = serde_json::from_str(&json)?;
+    Ok(())
+}
+
+#[test]
+fn action_matches_action_glob_in_resource_policy() -> Result<()> {
+    let json = read_to_string("example/resource_policy/s3_list.json")?;
     let policy: Policy = serde_json::from_str(&json)?;
+    let request = Request {
+        action: "s3:ListBuckets".to_owned(),
+    };
+    assert_eq!(
+        policy::eval_resource_policy(&policy, &request),
+        Some(Effect::Allow)
+    );
+    Ok(())
+}
+
+#[test]
+fn action_does_not_match_resource_policy() -> Result<()> {
+    let json = read_to_string("example/resource_policy/s3_list.json")?;
+    let policy: Policy = serde_json::from_str(&json)?;
+    let request = Request {
+        action: "s3:CreateBucket".into(),
+    };
+    assert_eq!(policy::eval_resource_policy(&policy, &request), None);
+    // No result on this specific policy; if it didn't match any policy
+    // at all the result would be an implicit deny.
     Ok(())
 }

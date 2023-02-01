@@ -15,5 +15,5 @@ fn main() {
     let request = policy::Request {
         action: "s3:ListBuckets".to_owned(),
     };
-    println!("{:#?}", policy.eval(&request));
+    println!("{:#?}", policy::eval_resource_policy(&policy, &request));
 }
