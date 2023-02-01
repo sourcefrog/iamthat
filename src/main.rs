@@ -2,7 +2,7 @@
 
 use std::fs::read_to_string;
 
-mod policy;
+use iamthat::policy;
 
 fn main() {
     tracing_subscriber::fmt::init();
