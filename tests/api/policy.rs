@@ -29,6 +29,26 @@ fn deny_unknown_fields_in_policy() {
 }
 
 #[test]
+fn deny_unknown_fields_in_statement() {
+    let err = serde_json::from_str::<Policy>(indoc! {r#"
+        {
+            "Version": "2000-01-01",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Resource": "*",
+                    "Action": "*",
+                    "Affect": "Allow"
+                }
+            ]
+        }
+        "#})
+    .unwrap_err()
+    .to_string();
+    assert!(err.contains("unknown field `Affect`"), "{err}");
+}
+
+#[test]
 fn deserialize_single_strings_abbreviate_lists() {
     let policy: Policy = serde_json::from_str(indoc! {r#"
         {
