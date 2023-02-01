@@ -16,8 +16,9 @@ use tracing::debug;
 // These could all use cows, but it's not important now since the input is
 // probably so small...
 
+// TODO: deny_unknown_fields, but it probably requires changing flattening.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "PascalCase")]
+#[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct Policy {
     pub version: Option<String>,
     pub id: Option<String>,

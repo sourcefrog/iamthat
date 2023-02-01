@@ -15,6 +15,20 @@ fn load_policy() -> Result<()> {
 }
 
 #[test]
+fn deny_unknown_fields_in_policy() {
+    let err = serde_json::from_str::<Policy>(indoc! {r#"
+        {
+            "Version": "2000-01-01",
+            "Color": "pink",
+            "Statement": []
+        }
+        "#})
+    .unwrap_err()
+    .to_string();
+    assert!(err.contains("unknown field `Color`"), "{err}");
+}
+
+#[test]
 fn deserialize_single_strings_abbreviate_lists() {
     let policy: Policy = serde_json::from_str(indoc! {r#"
         {
