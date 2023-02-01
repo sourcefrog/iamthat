@@ -13,6 +13,9 @@ use std::fmt;
 use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize};
 use tracing::debug;
 
+// These could all use cows, but it's not important now since the input is
+// probably so small...
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct Policy {
@@ -78,7 +81,7 @@ where
     D: Deserializer<'de>,
 {
     // Like <https://serde.rs/string-or-struct.html>
-    struct StringOrList(Vec<String>);
+    struct StringOrList();
     impl<'de> Visitor<'de> for StringOrList {
         type Value = Vec<String>;
 
@@ -105,9 +108,7 @@ where
         }
     }
 
-    deserializer
-        .deserialize_any(StringOrList(Vec::new()))
-        .map(|sol| sol)
+    deserializer.deserialize_any(StringOrList())
 }
 
 // fn check_action_pattern(action_pattern: &str) {
@@ -140,8 +141,7 @@ pub fn eval_resource_policy(policy: &Policy, request: &Request) -> Option<Effect
     if let Some(deny_statement) = policy
         .statement
         .iter()
-        .filter(|s| s.effect == Effect::Deny && s.matches(request))
-        .next()
+        .find(|s| s.effect == Effect::Deny && s.matches(request))
     {
         debug!(?deny_statement, "matches explicit allow");
         return Some(Effect::Allow);
@@ -150,8 +150,7 @@ pub fn eval_resource_policy(policy: &Policy, request: &Request) -> Option<Effect
     if let Some(allow_statement) = policy
         .statement
         .iter()
-        .filter(|s| s.effect == Effect::Allow && s.matches(request))
-        .next()
+        .find(|s| s.effect == Effect::Allow && s.matches(request))
     {
         debug!(?allow_statement, "matches explicit allow");
         return Some(Effect::Allow);
@@ -166,7 +165,7 @@ impl Statement {
         // TODO: More conditions
 
         for statement_action in &self.action {
-            if action_matches(&statement_action, &request.action) {
+            if action_matches(statement_action, &request.action) {
                 debug!(?request, ?self, "action matches");
                 return true;
             }
