@@ -3,6 +3,7 @@
 use std::fs::read_to_string;
 
 use eyre::Result;
+use indoc::indoc;
 
 use iamthat::policy::{self, *};
 
@@ -11,6 +12,25 @@ fn load_policy() -> Result<()> {
     let json = read_to_string("example/resource_policy/s3_list.json")?;
     let _policy: Policy = serde_json::from_str(&json)?;
     Ok(())
+}
+
+#[test]
+fn deserialize_single_strings_abbreviate_lists() {
+    let policy: Policy = serde_json::from_str(indoc! {r#"
+        {
+            "Version": "2000-01-01",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Resource": "*",
+                    "Action": "s3:ListBuckets"
+                }
+            ]
+        }
+        "#})
+    .unwrap();
+    assert_eq!(policy.statement[0].action, ["s3:ListBuckets"]);
+    assert_eq!(policy.statement[0].resource, ["*"]);
 }
 
 #[test]

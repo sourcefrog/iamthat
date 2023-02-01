@@ -8,16 +8,15 @@
 // * <https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_grammar.html>
 // * <https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html>
 
-use serde::{Deserialize, Serialize};
-use tracing::debug;
+use std::fmt;
 
-// TODO: Various fields can be either a single value or list; deserialize
-// them properly.
+use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize};
+use tracing::debug;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct Policy {
-    pub version: String,
+    pub version: Option<String>,
     pub id: Option<String>,
     pub statement: Vec<Statement>,
 }
@@ -27,11 +26,19 @@ pub struct Policy {
 pub struct Statement {
     /// Statement id.
     pub sid: Option<String>,
-    #[serde(flatten, rename = "PascalCase")]
-    pub principal: PrincipalOrNot,
+
+    #[serde(flatten)]
+    pub principal: Option<PrincipalOrNot>,
+
     pub effect: Effect,
+
+    #[serde(deserialize_with = "string_or_list")]
     pub resource: Vec<String>, // TODO: Or NotResource
-    pub action: Vec<String>,   // TODO: Or NotAction
+
+    #[serde(deserialize_with = "string_or_list")]
+    pub action: Vec<String>, // TODO: Or NotAction
+
+                             // TODO: Conditions
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Copy, Debug, Clone)]
@@ -60,6 +67,47 @@ pub enum PrincipalMapEntry {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Request {
     pub action: String,
+}
+
+/// Deserialize either a single string or a list of strings.
+///
+/// Many places in the IAM grammar allow a list of one string to be
+/// abbreviated as just a string.
+fn string_or_list<'de, D>(deserializer: D) -> std::result::Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    // Like <https://serde.rs/string-or-struct.html>
+    struct StringOrList(Vec<String>);
+    impl<'de> Visitor<'de> for StringOrList {
+        type Value = Vec<String>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("string or list of strings")
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::SeqAccess<'de>,
+        {
+            let mut v = Vec::new();
+            while let Some(el) = seq.next_element()? {
+                v.push(el)
+            }
+            Ok(v)
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(vec![value.to_owned()])
+        }
+    }
+
+    deserializer
+        .deserialize_any(StringOrList(Vec::new()))
+        .map(|sol| sol)
 }
 
 // fn check_action_pattern(action_pattern: &str) {
