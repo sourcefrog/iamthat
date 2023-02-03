@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 use tracing::{trace, Level};
 use tracing_subscriber::prelude::*;
 
-use iamthat::policy;
+use iamthat::policy::{self, Request};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -22,13 +22,24 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    Eval,
+    /// Evaluate whether a request is allowed by a set of policies.
+    Eval {
+        /// The request to evaluate, as a JSON string
+        #[arg(long)]
+        request: Option<String>,
+    },
 }
 
 fn main() {
     let args = Args::parse();
     init_tracing(args.json_log.as_ref());
 
+    match args.command {
+        Command::Eval { request } => eval(&request),
+    }
+}
+
+fn eval(request: &Option<String>) {
     let policy_json = read_to_string("example/resource_policy/s3_list.json").unwrap();
     let policy: policy::Policy = serde_json::from_str(&policy_json).unwrap();
     println!("{policy:#?}");
