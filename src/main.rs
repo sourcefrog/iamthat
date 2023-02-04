@@ -5,6 +5,7 @@ use std::io::stderr;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use eyre::Context;
 use tracing::{trace, Level};
 use tracing_subscriber::prelude::*;
 
@@ -26,11 +27,11 @@ enum Command {
     Eval {
         /// The request to evaluate, as a JSON string
         #[arg(long)]
-        request: Option<String>,
+        request: String,
     },
 }
 
-fn main() {
+fn main() -> eyre::Result<()> {
     let args = Args::parse();
     init_tracing(args.json_log.as_ref());
 
@@ -39,16 +40,15 @@ fn main() {
     }
 }
 
-fn eval(request: &Option<String>) {
+fn eval(request: &String) -> eyre::Result<()> {
     let policy_json = read_to_string("example/resource_policy/s3_list.json").unwrap();
     let policy: policy::Policy = serde_json::from_str(&policy_json).unwrap();
     println!("{policy:#?}");
     println!();
 
-    let request = policy::Request {
-        action: "s3:ListBuckets".to_owned(),
-    };
+    let request = serde_json::from_str::<Request>(request).wrap_err("Failed to parse request")?;
     println!("{:#?}", policy::eval_resource_policy(&policy, &request));
+    Ok(())
 }
 
 fn init_tracing(json_log: Option<&PathBuf>) {
