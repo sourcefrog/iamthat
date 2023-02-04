@@ -9,6 +9,7 @@ use eyre::Context;
 use tracing::{trace, Level};
 use tracing_subscriber::prelude::*;
 
+use iamthat::json::FromJson;
 use iamthat::policy::{self, Request};
 
 #[derive(Parser, Debug)]
@@ -46,7 +47,7 @@ fn eval(request: &String) -> eyre::Result<()> {
     println!("{policy:#?}");
     println!();
 
-    let request = serde_json::from_str::<Request>(request).wrap_err("Failed to parse request")?;
+    let request = Request::from_json(request).wrap_err("Failed to parse request")?;
     println!("{:#?}", policy::eval_resource_policy(&policy, &request));
     Ok(())
 }
@@ -54,7 +55,6 @@ fn eval(request: &String) -> eyre::Result<()> {
 fn init_tracing(json_log: Option<&PathBuf>) {
     let stderr_layer = tracing_subscriber::fmt::layer()
         .with_writer(stderr)
-        // .with_max_level(Level::TRACE)
         .without_time();
     let f = json_log.map(|p| {
         OpenOptions::new()
