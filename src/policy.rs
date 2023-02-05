@@ -8,12 +8,15 @@
 // * <https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_grammar.html>
 // * <https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html>
 
-use std::{fmt, str::FromStr};
+use std::str::FromStr;
 
 use eyre::{bail, eyre, WrapErr};
 use regex::Regex;
-use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use tracing::debug;
+
+use crate::effect::Effect;
+use crate::json::de_string_or_list;
 
 // These could all use cows, but it's not important now since the input is
 // probably so small...
@@ -26,31 +29,62 @@ pub struct Policy {
     pub statement: Vec<Statement>,
 }
 
+impl Policy {
+    pub fn allows(&self, request: &Request) -> bool {
+        self.statement
+            .iter()
+            .any(|statement| statement.allows(request))
+    }
+
+    pub fn denies(&self, request: &Request) -> bool {
+        self.statement
+            .iter()
+            .any(|statement| statement.denies(request))
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct Statement {
     /// Statement id.
     pub sid: Option<String>,
-
     #[serde(flatten)]
     pub principal: Option<PrincipalOrNot>,
 
     pub effect: Effect,
 
-    #[serde(deserialize_with = "string_or_list")]
+    #[serde(deserialize_with = "de_string_or_list")]
     pub resource: Vec<String>, // TODO: Or NotResource
 
-    #[serde(deserialize_with = "string_or_list")]
+    #[serde(deserialize_with = "de_string_or_list")]
     pub action: Vec<String>, // TODO: Or NotAction
 
                              // TODO: Conditions
 }
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Copy, Debug, Clone)]
-#[serde(rename_all = "PascalCase")]
-pub enum Effect {
-    Allow,
-    Deny,
+impl Statement {
+    pub fn matches(&self, request: &Request) -> bool {
+        // TODO: More conditions: principal, resource, action, conditions, etc.
+
+        for statement_action in &self.action {
+            if ActionGlob::from_str(statement_action)
+                .map(|glob| glob.matches(&request.action))
+                .unwrap_or(false)
+            {
+                debug!(?request, ?self, "action matches");
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn allows(&self, request: &Request) -> bool {
+        self.effect.is_allow() && self.matches(request)
+    }
+
+    pub fn denies(&self, request: &Request) -> bool {
+        self.effect.is_deny() && self.matches(request)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -72,45 +106,6 @@ pub enum PrincipalMapEntry {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Request {
     pub action: String,
-}
-
-/// Deserialize either a single string or a list of strings.
-///
-/// Many places in the IAM grammar allow a list of one string to be
-/// abbreviated as just a string.
-fn string_or_list<'de, D>(deserializer: D) -> std::result::Result<Vec<String>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    // Like <https://serde.rs/string-or-struct.html>
-    struct StringOrList();
-    impl<'de> Visitor<'de> for StringOrList {
-        type Value = Vec<String>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("string or list of strings")
-        }
-
-        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where
-            A: de::SeqAccess<'de>,
-        {
-            let mut v = Vec::new();
-            while let Some(el) = seq.next_element()? {
-                v.push(el)
-            }
-            Ok(v)
-        }
-
-        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            Ok(vec![value.to_owned()])
-        }
-    }
-
-    deserializer.deserialize_any(StringOrList())
 }
 
 // fn check_action_pattern(action_pattern: &str) {
@@ -167,44 +162,12 @@ impl ActionGlob {
     }
 }
 
-pub fn eval_resource_policy(policy: &Policy, request: &Request) -> Option<Effect> {
-    // Very approximate!
-
-    // TODO: Don't unwrap
-
-    // First, does anything deny?
-    if let Some(deny_statement) = policy
-        .statement
-        .iter()
-        .find(|s| s.effect == Effect::Deny && s.matches(request).unwrap())
-    {
-        debug!(?deny_statement, "matches explicit allow");
-        return Some(Effect::Allow);
-    }
-
-    if let Some(allow_statement) = policy
-        .statement
-        .iter()
-        .find(|s| s.effect == Effect::Allow && s.matches(request).unwrap())
-    {
-        debug!(?allow_statement, "matches explicit allow");
-        return Some(Effect::Allow);
-    }
-
-    debug!(policy.id, ?request, "policy does not match request");
-    None
-}
-
-impl Statement {
-    pub fn matches(&self, request: &Request) -> eyre::Result<bool> {
-        // TODO: More conditions
-
-        for statement_action in &self.action {
-            if ActionGlob::from_str(statement_action)?.matches(&request.action) {
-                debug!(?request, ?self, "action matches");
-                return Ok(true);
-            }
-        }
-        Ok(false)
-    }
+// See <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html>
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub enum PolicyType {
+    Resource,
+    Identity,
+    PermissionsBoundary,
+    ServiceControl,
+    Session,
 }

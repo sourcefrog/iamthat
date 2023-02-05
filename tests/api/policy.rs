@@ -6,7 +6,7 @@ use eyre::Result;
 use indoc::indoc;
 use serde_json::json;
 
-use iamthat::policy::{self, *};
+use iamthat::policy::*;
 
 // TODO: Test more types of Action glob.
 
@@ -91,10 +91,7 @@ fn action_star_matches_in_resource_policy() -> Result<()> {
     let request = Request {
         action: "s3:ListBuckets".to_owned(),
     };
-    assert_eq!(
-        policy::eval_resource_policy(&policy, &request),
-        Some(Effect::Allow)
-    );
+    assert!(policy.allows(&request));
     Ok(())
 }
 
@@ -115,10 +112,8 @@ fn action_glob_case_insensitive_in_resource_policy() -> Result<()> {
     let request = Request {
         action: "S3:lISTbUCKETS".to_owned(),
     };
-    assert_eq!(
-        policy::eval_resource_policy(&policy, &request),
-        Some(Effect::Allow)
-    );
+    assert!(policy.allows(&request));
+    assert!(!policy.denies(&request));
     Ok(())
 }
 
@@ -129,10 +124,8 @@ fn action_matches_action_glob_in_resource_policy() -> Result<()> {
     let request = Request {
         action: "s3:ListBuckets".to_owned(),
     };
-    assert_eq!(
-        policy::eval_resource_policy(&policy, &request),
-        Some(Effect::Allow)
-    );
+    assert!(policy.allows(&request));
+    assert!(!policy.denies(&request));
     Ok(())
 }
 
@@ -143,7 +136,8 @@ fn action_does_not_match_resource_policy() -> Result<()> {
     let request = Request {
         action: "s3:CreateBucket".into(),
     };
-    assert_eq!(policy::eval_resource_policy(&policy, &request), None);
+    assert!(!policy.allows(&request));
+    assert!(!policy.denies(&request));
     // No result on this specific policy; if it didn't match any policy
     // at all the result would be an implicit deny.
     Ok(())
