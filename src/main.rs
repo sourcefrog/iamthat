@@ -1,5 +1,7 @@
 // Copyright 2023 Martin Pool
 
+pub mod request;
+
 use std::fs::{read_to_string, OpenOptions};
 use std::io::stderr;
 use std::path::PathBuf;
@@ -13,7 +15,8 @@ use tracing_subscriber::prelude::*;
 
 use iamthat::effect::Effect;
 use iamthat::json::FromJson;
-use iamthat::policy::{self, Policy, PolicyType, Request};
+use iamthat::policy::{self, Policy, PolicyType};
+use iamthat::request::Request;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -45,11 +48,6 @@ enum Command {
 fn main() -> eyre::Result<ExitCode> {
     let args = Args::parse();
     init_tracing(args.json_log.as_ref());
-
-    let policy_json = read_to_string("example/resource_policy/s3_list.json").unwrap();
-    let policy: policy::Policy = serde_json::from_str(&policy_json).unwrap();
-    println!("{policy:#?}");
-    println!();
 
     match args.command {
         Command::Eval {

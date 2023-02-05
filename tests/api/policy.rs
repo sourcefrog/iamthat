@@ -7,6 +7,7 @@ use indoc::indoc;
 use serde_json::json;
 
 use iamthat::policy::*;
+use iamthat::request::Request;
 
 // TODO: Test more types of Action glob.
 

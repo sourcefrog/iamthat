@@ -4,8 +4,9 @@ use serde_json::json;
 use tracing_test::traced_test;
 
 use iamthat::json::FromJson;
-use iamthat::policy::{Policy, PolicyType, Request};
+use iamthat::policy::{Policy, PolicyType};
 use iamthat::policyset::PolicySet;
+use iamthat::Request;
 
 #[test]
 fn deny_overrides_allow() {

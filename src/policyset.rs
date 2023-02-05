@@ -3,7 +3,8 @@
 use tracing::trace;
 
 use crate::effect::Effect;
-use crate::policy::{Policy, PolicyType, Request};
+use crate::policy::{Policy, PolicyType};
+use crate::request::Request;
 
 /// A set of policies relevant to some evaluations.
 #[derive(Default)]

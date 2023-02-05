@@ -11,11 +11,12 @@
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-use tracing::debug;
+use tracing::{debug, warn};
 
 use crate::action::ActionGlob;
 use crate::effect::Effect;
 use crate::json::de_string_or_list;
+use crate::request::Request;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
@@ -63,12 +64,16 @@ impl Statement {
         // TODO: More conditions: principal, resource, action, conditions, etc.
 
         for statement_action in &self.action {
-            if ActionGlob::from_str(statement_action)
-                .map(|glob| glob.matches(&request.action))
-                .unwrap_or(false)
-            {
-                debug!(?request, ?self, "action matches");
-                return true;
+            match ActionGlob::from_str(statement_action) {
+                Ok(glob) => {
+                    if glob.matches(&request.action) {
+                        debug!(?request, ?self, "action matches");
+                        return true;
+                    }
+                }
+                Err(e) => {
+                    warn!(?statement_action, ?e, "action glob parse error");
+                }
             }
         }
         false
@@ -98,19 +103,6 @@ pub enum PrincipalMapEntry {
     CanonicalUser(Vec<String>),
     Service(Vec<String>),
 }
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Request {
-    pub action: String,
-}
-
-// fn check_action_pattern(action_pattern: &str) {
-//     if let Some(star) = action_pattern.find('*') {
-//         if star != action_pattern.len() - 1 {
-//             panic!("Star in {action_pattern:?} is not at the end");
-//         }
-//     }
-// }
 
 // See <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html>
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
