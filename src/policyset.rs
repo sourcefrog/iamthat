@@ -21,6 +21,10 @@ impl PolicySet {
         self.policies.push((policy_type, policy));
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.policies.is_empty()
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = &(PolicyType, Policy)> {
         self.policies.iter()
     }

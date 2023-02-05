@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 use eyre::Context;
 use iamthat::policyset::PolicySet;
-use tracing::{info, trace};
+use tracing::{error, info, trace};
 use tracing_subscriber::prelude::*;
 
 use iamthat::effect::Effect;
@@ -65,6 +65,10 @@ fn main() -> eyre::Result<ExitCode> {
                 .collect::<eyre::Result<Vec<policy::Policy>>>()?
                 .into_iter()
                 .for_each(|policy| policy_set.add(PolicyType::Resource, policy));
+            if policy_set.is_empty() {
+                error!("No policies were provided");
+                return Ok(ExitCode::FAILURE);
+            }
 
             let req_jsons = request_files
                 .iter()
