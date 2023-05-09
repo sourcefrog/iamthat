@@ -18,10 +18,14 @@ use crate::effect::Effect;
 use crate::json::de_string_or_list;
 use crate::request::Request;
 
+/// An IAM policy document, containing some statements.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct Policy {
+    /// The version of the IAM grammar, "2008-10-17" or "2012-10-17".
     pub version: Option<String>,
+    /// A user-supplied id for the policy. Some services have special
+    /// constraints on the id.
     pub id: Option<String>,
     pub statement: Vec<Statement>,
 }
@@ -40,14 +44,24 @@ impl Policy {
     }
 }
 
+/// One statement in a policy.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct Statement {
     /// Statement id.
+    ///
+    /// "For IAM policies, basic alphanumeric characters (A-Z,a-z,0-9) are the only allowed characters
+    /// in the Sid value. Other AWS services that support resource policies may have other
+    /// requirements for the Sid value. For example, some services require this value to be
+    /// unique within an AWS account, and some services allow additional characters such as
+    /// spaces in the Sid value."
     pub sid: Option<String>,
+
+    /// The principal to which this statement applies.
     #[serde(flatten)]
     pub principal: Option<PrincipalOrNot>,
 
+    /// The effect of this statement: allow or deny.
     pub effect: Effect,
 
     #[serde(deserialize_with = "de_string_or_list")]
