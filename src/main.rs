@@ -3,10 +3,11 @@
 pub mod request;
 
 use std::fs::{read_to_string, OpenOptions};
-use std::io::stderr;
+use std::io::{stderr, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use eyre::Context;
 use iamthat::policyset::PolicySet;
@@ -17,6 +18,7 @@ use iamthat::effect::Effect;
 use iamthat::json::FromJson;
 use iamthat::policy::{self, Policy, PolicyType};
 use iamthat::request::Request;
+use iamthat::scenario::Scenario;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -38,10 +40,21 @@ enum Command {
 
         /// Files containing JSON requests to evaluate
         #[arg(long = "request_file")]
-        request_files: Vec<PathBuf>,
+        request_files: Vec<Utf8PathBuf>,
 
         #[arg(long = "resource_policy_file", short = 'R')]
-        resource_policy_files: Vec<PathBuf>,
+        resource_policy_files: Vec<Utf8PathBuf>,
+    },
+
+    /// Evaluate all the requests in a scenario file against the policies
+    /// in that scenario, and print the results.
+    Scenario {
+        /// The scenario file to evaluate
+        scenario_file: Utf8PathBuf,
+
+        /// Write evaluation results as json to this file.
+        #[arg(long, short)]
+        output: Option<Utf8PathBuf>,
     },
 }
 
@@ -93,14 +106,40 @@ fn main() -> eyre::Result<ExitCode> {
                     effect
                 })
                 .collect::<Vec<_>>();
-            if results.iter().any(Effect::is_deny) {
-                info!("Some requests were denied");
-                Ok(ExitCode::FAILURE) // TODO: More specific for "success but denied"
-            } else {
-                info!("All requests were allowed");
-                Ok(ExitCode::SUCCESS)
-            }
+            results_to_return_code(&results)
         }
+        Command::Scenario {
+            output,
+            scenario_file,
+        } => {
+            let scenario = Scenario::load(&scenario_file)
+                .wrap_err_with(|| format!("failed to read scenario file {scenario_file:?}"))?;
+            info!(?scenario);
+            let results = scenario.eval();
+            info!(?results);
+            if let Some(out_path) = output {
+                let mut out = OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(&out_path)
+                    .wrap_err_with(|| format!("failed to open output file {out_path:?}"))?;
+                serde_json::to_writer_pretty(&mut out, &results)?;
+                writeln!(out)?;
+                out.flush()?;
+            }
+            results_to_return_code(&results)
+        }
+    }
+}
+
+fn results_to_return_code(results: &[Effect]) -> Result<ExitCode, eyre::ErrReport> {
+    if results.iter().any(Effect::is_deny) {
+        info!("Some requests were denied");
+        Ok(ExitCode::FAILURE) // TODO: More specific for "success but denied"
+    } else {
+        info!("All requests were allowed");
+        Ok(ExitCode::SUCCESS)
     }
 }
 

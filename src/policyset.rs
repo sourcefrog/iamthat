@@ -7,6 +7,8 @@ use crate::policy::{Policy, PolicyType};
 use crate::request::Request;
 
 /// A set of policies relevant to some evaluations.
+// TODO: A concept of policy attachment.
+// TODO: Merge with Scenario?
 #[derive(Default)]
 pub struct PolicySet {
     policies: Vec<(PolicyType, Policy)>,

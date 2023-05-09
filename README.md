@@ -34,6 +34,8 @@ Testing:
 Policy evaluation:
 
 - [x] Check a single action name, with no parameters, against a policy.
+- [ ] Attachment of policies to resources: find the policies for the resource
+      affected by the request.
 - [ ] Check resource name.
 - [ ] Check condition keys.
 - [ ] NotAction, NotResource, etc.
@@ -44,6 +46,14 @@ Policy evaluation:
 AWS API integration:
 
 - [ ] Download relevant policies from AWS?
+
+Quality of life:
+
+- [ ] Switch to using [json5] for policy files, to allow comments and trailing
+  commas?
+- [ ] JSON schemas.
+
+[json5]: https://json5.org/
 
 ## IAM Policy Simulator
 

@@ -1,0 +1,8 @@
+{
+    "ResourcePolicyFiles": {
+        "AllowList": "../resource_policy/s3_list.json"
+    },
+    "RequestFiles": [
+        "../requests/s3_list.json"
+    ]
+}

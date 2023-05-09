@@ -2,8 +2,8 @@
 
 use std::fmt;
 use std::fs::read_to_string;
-use std::path::Path;
 
+use camino::Utf8Path;
 use eyre::Context;
 use serde::de::{self, Visitor};
 use serde::Deserializer;
@@ -11,7 +11,7 @@ use serde::Deserializer;
 pub trait FromJson: Sized + serde::de::DeserializeOwned {
     fn from_json(json: &str) -> eyre::Result<Self>;
 
-    fn from_json_file(path: &Path) -> eyre::Result<Self>;
+    fn from_json_file(path: &Utf8Path) -> eyre::Result<Self>;
 
     fn from_json_value(value: serde_json::Value) -> eyre::Result<Self> {
         serde_json::from_value(value).wrap_err("Failed to parse JSON")
@@ -26,13 +26,13 @@ where
         serde_json::from_str(json).wrap_err("Failed to parse JSON")
     }
 
-    fn from_json_file(path: &Path) -> eyre::Result<Self> {
+    fn from_json_file(path: &Utf8Path) -> eyre::Result<Self> {
         serde_json::from_str(
             read_to_string(path)
-                .wrap_err("Failed to read file")?
+                .wrap_err_with(|| format!("failed to read file {path:?}"))?
                 .as_str(),
         )
-        .wrap_err("Failed to parse JSON")
+        .wrap_err_with(|| format!("failed to parse JSON from {path:?}"))
     }
 }
 

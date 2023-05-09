@@ -7,6 +7,9 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+assert_cmd = { version = "2.0", features = ["color", "color-auto"] }
+assert_fs = { version = "1.0", features = ["color", "color-auto"] }
+camino = { version = "1", features = ["serde1"] }
 clap = { version = "4", features = ["derive"] }
 eyre = "0.6"
 indoc = "2"
