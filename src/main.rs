@@ -1,8 +1,10 @@
 // Copyright 2023 Martin Pool
 
+//! `iamthat` command line tool: simulate/evaluate AWS requests against IAM policies.
+
 pub mod request;
 
-use std::fs::{read_to_string, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{stderr, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -10,15 +12,14 @@ use std::process::ExitCode;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use eyre::Context;
-use iamthat::policyset::PolicySet;
-use tracing::{error, info, trace};
+use tracing::{info, trace};
 use tracing_subscriber::prelude::*;
 
 use iamthat::effect::Effect;
 use iamthat::json::FromJson;
-use iamthat::policy::{self, Policy, PolicyType};
 use iamthat::request::Request;
 use iamthat::scenario::Scenario;
+use iamthat::Result;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -32,25 +33,16 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// Evaluate whether a request is allowed by a set of policies.
-    Eval {
-        /// The request to evaluate, as a JSON string
-        #[arg(long = "request")]
-        requests: Vec<String>,
-
-        /// Files containing JSON requests to evaluate
-        #[arg(long = "request_file")]
-        request_files: Vec<Utf8PathBuf>,
-
-        #[arg(long = "resource_policy_file", short = 'R')]
-        resource_policy_files: Vec<Utf8PathBuf>,
-    },
-
     /// Evaluate all the requests in a scenario file against the policies
     /// in that scenario, and print the results.
-    Scenario {
+    Eval {
         /// The scenario file to evaluate
-        scenario_file: Utf8PathBuf,
+        #[arg(long, short, required = true)]
+        scenario: Utf8PathBuf,
+
+        /// Files containing JSON requests to evaluate
+        #[arg(long, short, required = true)]
+        request: Vec<Utf8PathBuf>,
 
         /// Write evaluation results as json to this file.
         #[arg(long, short)]
@@ -64,59 +56,28 @@ fn main() -> eyre::Result<ExitCode> {
 
     match args.command {
         Command::Eval {
-            requests,
-            request_files,
-            resource_policy_files,
+            output,
+            scenario,
+            request,
         } => {
-            let mut policy_set = PolicySet::new();
-            resource_policy_files
+            let scenario = Scenario::load(&scenario)
+                .wrap_err_with(|| format!("failed to read scenario file {scenario:?}"))?;
+            info!(?scenario);
+            let requests = request
                 .iter()
                 .map(|p| {
-                    Policy::from_json_file(p)
-                        .wrap_err_with(|| format!("Failed to read policy file {p:?}"))
-                })
-                .collect::<eyre::Result<Vec<policy::Policy>>>()?
-                .into_iter()
-                .for_each(|policy| policy_set.add(PolicyType::Resource, policy));
-            if policy_set.is_empty() {
-                error!("No policies were provided");
-                return Ok(ExitCode::FAILURE);
-            }
-
-            let req_jsons = request_files
-                .iter()
-                .map(|p| {
-                    read_to_string(p).wrap_err_with(|| format!("Failed to read request file {p:?}"))
-                })
-                .collect::<eyre::Result<Vec<String>>>()?;
-            let req_objects = req_jsons
-                .into_iter()
-                .chain(requests.into_iter())
-                .map(|json| {
-                    Request::from_json(&json)
-                        .wrap_err_with(|| format!("Failed to parse request: {json}"))
+                    Request::from_json_file(p)
+                        .wrap_err_with(|| format!("Failed to read request file {p:?}"))
                 })
                 .collect::<eyre::Result<Vec<Request>>>()?;
-
-            let results = req_objects
+            let effects = requests
                 .into_iter()
                 .map(|request| {
-                    let effect = policy_set.eval(&request);
+                    let effect = scenario.eval(&request);
                     info!(?request, ?effect);
                     effect
                 })
-                .collect::<Vec<_>>();
-            results_to_return_code(&results)
-        }
-        Command::Scenario {
-            output,
-            scenario_file,
-        } => {
-            let scenario = Scenario::load(&scenario_file)
-                .wrap_err_with(|| format!("failed to read scenario file {scenario_file:?}"))?;
-            info!(?scenario);
-            let results = scenario.eval();
-            info!(?results);
+                .collect::<Result<Vec<_>>>()?;
             if let Some(out_path) = output {
                 let mut out = OpenOptions::new()
                     .create(true)
@@ -124,11 +85,11 @@ fn main() -> eyre::Result<ExitCode> {
                     .truncate(true)
                     .open(&out_path)
                     .wrap_err_with(|| format!("failed to open output file {out_path:?}"))?;
-                serde_json::to_writer_pretty(&mut out, &results)?;
+                serde_json::to_writer_pretty(&mut out, &effects)?;
                 writeln!(out)?;
                 out.flush()?;
             }
-            results_to_return_code(&results)
+            results_to_return_code(&effects)
         }
     }
 }

@@ -4,15 +4,15 @@ use serde_json::json;
 use tracing_test::traced_test;
 
 use iamthat::json::FromJson;
-use iamthat::policy::{Policy, PolicyType};
-use iamthat::policyset::PolicySet;
+use iamthat::policy::Policy;
+use iamthat::scenario::Scenario;
 use iamthat::Request;
 
 #[test]
 fn deny_overrides_allow() {
-    let mut policyset = PolicySet::new();
-    policyset.add(
-        PolicyType::Identity,
+    let mut scenario = Scenario::new();
+    scenario.add_resource_policy(
+        "deny_and_allow",
         Policy::from_json_value(json! {
         {
             "Version": "2000-01-01",
@@ -37,19 +37,19 @@ fn deny_overrides_allow() {
         action: "s3:GetObject".to_string(),
     };
 
-    assert!(policyset.eval(&request).is_deny());
+    assert!(scenario.eval(&request).unwrap().is_deny());
 }
 
 #[test]
 #[traced_test]
-fn empty_policyset_is_implicit_deny() -> eyre::Result<()> {
-    let policyset = PolicySet::new();
+fn scenario_with_no_policies_causes_implicit_deny() -> eyre::Result<()> {
+    let scenario = Scenario::new();
 
     let request = Request {
         action: "aws-pca:IssueCertificate".to_string(),
     };
 
-    assert!(policyset.eval(&request).is_deny());
+    assert!(scenario.eval(&request).unwrap().is_deny());
 
     Ok(())
 }
@@ -57,9 +57,9 @@ fn empty_policyset_is_implicit_deny() -> eyre::Result<()> {
 #[test]
 #[traced_test]
 fn lack_of_match_is_implicit_deny() -> eyre::Result<()> {
-    let mut policyset = PolicySet::new();
-    policyset.add(
-        PolicyType::Resource,
+    let mut scenario = Scenario::new();
+    scenario.add_resource_policy(
+        "allow_s3",
         Policy::from_json_value(json! {
         {
             "Version": "2000-01-01",
@@ -78,7 +78,7 @@ fn lack_of_match_is_implicit_deny() -> eyre::Result<()> {
         action: "aws-pca:IssueCertificate".to_string(),
     };
 
-    assert!(policyset.eval(&request).is_deny());
+    assert!(scenario.eval(&request).unwrap().is_deny());
 
     Ok(())
 }

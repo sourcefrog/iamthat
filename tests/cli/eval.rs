@@ -12,8 +12,11 @@ use super::run;
 fn s3_list_scenario_succeeds() {
     let out_file = NamedTempFile::new("out.json").unwrap();
     run()
-        .arg("scenario")
+        .arg("eval")
+        .arg("--scenario")
         .arg("example/scenario/s3_list.json")
+        .arg("--request")
+        .arg("example/request/s3_list.json")
         .arg("--output")
         .arg(out_file.path())
         .assert()
