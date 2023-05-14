@@ -42,7 +42,7 @@ impl Scenario {
 
     /// Load a policy, following any inclusions of policies or requests
     /// from other files.
-    pub fn load(path: &Utf8Path) -> Result<Scenario> {
+    pub fn from_json_file(path: &Utf8Path) -> Result<Scenario> {
         let swi = ScenarioWithIncludes::from_json_file(path)?;
         info!(?swi);
 

@@ -7,6 +7,7 @@ pub mod policy;
 pub mod scenario;
 
 pub mod request;
+pub mod testcase;
 pub use request::Request;
 
 pub use eyre::Result;

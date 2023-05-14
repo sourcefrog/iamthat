@@ -1,0 +1,13 @@
+{
+    "Scenario": "../scenario/s3_list.json",
+    "Assertions": [
+        {
+            "Request": "../request/s3_list.json",
+            "Expected": "Allow"
+        },
+        {
+            "Request": "../request/s3_delete_bucket.json",
+            "Expected": "Deny"
+        }
+    ]
+}

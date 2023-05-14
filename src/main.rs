@@ -12,7 +12,8 @@ use std::process::ExitCode;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use eyre::Context;
-use tracing::{info, trace};
+use iamthat::testcase::TestCase;
+use tracing::{error, info, trace};
 use tracing_subscriber::prelude::*;
 
 use iamthat::effect::Effect;
@@ -33,8 +34,8 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// Evaluate all the requests in a scenario file against the policies
-    /// in that scenario, and print the results.
+    /// Evaluate a request against against the policies
+    /// in a scenario file, and print the results.
     Eval {
         /// The scenario file to evaluate
         #[arg(long, short, required = true)]
@@ -48,6 +49,10 @@ enum Command {
         #[arg(long, short)]
         output: Option<Utf8PathBuf>,
     },
+
+    /// Evaluate all the requests in a testcase file against the policies
+    /// in that scenario, and fail if the result is not as expected.
+    Test { testcases: Vec<Utf8PathBuf> },
 }
 
 fn main() -> eyre::Result<ExitCode> {
@@ -60,7 +65,7 @@ fn main() -> eyre::Result<ExitCode> {
             scenario,
             request,
         } => {
-            let scenario = Scenario::load(&scenario)
+            let scenario = Scenario::from_json_file(&scenario)
                 .wrap_err_with(|| format!("failed to read scenario file {scenario:?}"))?;
             info!(?scenario);
             let requests = request
@@ -90,6 +95,30 @@ fn main() -> eyre::Result<ExitCode> {
                 out.flush()?;
             }
             results_to_return_code(&effects)
+        }
+        Command::Test {
+            testcases: testcase_paths,
+        } => {
+            let results = testcase_paths
+                .iter()
+                .flat_map(|p| match TestCase::from_json_file(p) {
+                    Ok(tc) => {
+                        info!(?tc);
+                        tc.eval()
+                    }
+                    Err(err) => vec![Err(err)],
+                })
+                .inspect(|result| {
+                    if let Err(err) = result {
+                        error!(?err)
+                    }
+                })
+                .collect::<Vec<Result<()>>>();
+            if results.iter().any(Result::is_err) {
+                Ok(ExitCode::FAILURE)
+            } else {
+                Ok(ExitCode::SUCCESS)
+            }
         }
     }
 }

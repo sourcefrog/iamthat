@@ -18,16 +18,17 @@ Check one request against some resource policies:
 Policy types:
 
 - [x] Parse AWS IAM policy JSON.
-- [ ] Resource policies.
+- [x] Resource policies.
+- [ ] Attach policies to resources.
 - [ ] Identity policies.
 - [ ] Service control policies.
 - [ ] Session policies.
+- [x] JSON scenario files to the tree containing all the policies and resources
+  relevant to a test.
 
-Testing:
+Testing of iamthat:
 
-- [ ] JSON "scenario" files to the tree containing both a request and a
-  series of policies, and an assertion that the requests are allowed or
-  denied.
+- [x] Test a request against a scenario and assert that it is allowed or denied.
 - [ ] Automatically test against access analyzer, for cases that are supported
   by both.
 
