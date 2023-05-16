@@ -1,0 +1,16 @@
+{
+    "Comment": "iamthat test fails if the expected values are wrong",
+    "Scenario": "../scenario/s3_list.json",
+    "Assertions": [
+        {
+            "Comment": "The policy actually does allow ListObjects",
+            "Request": "../request/s3_list.json",
+            "Expected": "Deny"
+        },
+        {
+            "Comment": "The policy does not allow delete",
+            "Request": "../request/s3_delete_bucket.json",
+            "Expected": "Allow"
+        }
+    ]
+}
