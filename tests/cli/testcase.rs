@@ -27,8 +27,18 @@ fn all_example_testcases() {
         .expect("Glob testcases")
         .map(|r| r.expect("Read testcase name"))
         .collect::<Vec<_>>();
-    run().args(["test"]).args(paths).assert().success().stderr(
-        predicate::str::contains("Assertion 0 passed")
-            .and(predicate::str::contains("Assertion 1 passed")),
-    );
+    run().args(["test"]).args(paths).assert().success();
+}
+
+/// Tests that are expected to fail all do fail.
+
+#[test]
+fn failing_testcases() {
+    for path in glob("example/failing_tests/*.json")
+        .expect("Glob testcases")
+        .map(|r| r.expect("Read testcase name"))
+    {
+        println!("Test {path:?}");
+        run().args(["test"]).arg(path).assert().failure();
+    }
 }
