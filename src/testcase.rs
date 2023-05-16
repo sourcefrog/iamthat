@@ -8,6 +8,7 @@ use camino::Utf8PathBuf;
 use eyre::{eyre, Context};
 use serde::{Deserialize, Serialize};
 use tracing::info;
+use tracing::trace;
 
 use crate::effect::Effect;
 use crate::json::FromJson;
@@ -17,6 +18,7 @@ use crate::Result;
 
 #[derive(Debug, Clone)]
 pub struct TestCase {
+    pub comment: Option<String>,
     pub scenario: Scenario,
     pub assertions: Vec<TestCaseAssertion>,
 }
@@ -34,12 +36,14 @@ impl TestCase {
                 Ok(TestCaseAssertion {
                     request,
                     expected: assertion.expected,
+                    comment: assertion.comment,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
         Ok(TestCase {
             scenario,
             assertions,
+            comment: testcase_json.comment,
         })
     }
 
@@ -47,7 +51,8 @@ impl TestCase {
         self.assertions
             .iter()
             .enumerate()
-            .map(|(i, TestCaseAssertion { request, expected })| {
+            .map(|(i, TestCaseAssertion { request, expected, comment })| {
+                trace!(?request, ?expected, ?comment, "Evaluated assertion {i}");
                 let actual = self
                     .scenario
                     .eval(request)
@@ -56,6 +61,7 @@ impl TestCase {
                     info!(?actual, ?expected, ?request, "Assertion {i} passed");
                     Ok(())
                 } else {
+                    // TODO: Maybe distinguish that "we successfully evaluated the test and it failed"?
                     Err(eyre!(
                         "Expected {expected:?} but got {actual:?} for assertion {i}, request {request:?}",
                     ))
@@ -67,21 +73,26 @@ impl TestCase {
 
 #[derive(Debug, Clone)]
 pub struct TestCaseAssertion {
+    pub comment: Option<String>,
     pub request: Request,
     pub expected: Effect,
 }
 
-/// A testcase file containing a scenario, some requests, and expected results.
+/// A testcase file referencing a scenario file, and then a series of assertions.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct TestCaseJson {
+    pub comment: Option<String>,
     pub scenario: Utf8PathBuf,
     pub assertions: Vec<TestCaseAssertionJson>,
 }
 
+/// An assertino in a testcase file, referencing a request file and giving the
+/// expected effect.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct TestCaseAssertionJson {
+    pub comment: Option<String>,
     pub request: Utf8PathBuf,
     pub expected: Effect,
 }
