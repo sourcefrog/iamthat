@@ -10,4 +10,6 @@ pub mod request;
 pub mod testcase;
 pub use request::Request;
 
-pub use eyre::Result;
+// TODO: Maybe a more specific and structured error type, to make this
+// more usable as a library?
+pub use eyre::{Error, Result};
