@@ -52,7 +52,12 @@ enum Command {
 
     /// Evaluate all the requests in a testcase file against the policies
     /// in that scenario, and fail if the result is not as expected.
-    Test { testcases: Vec<Utf8PathBuf> },
+    Test {
+        testcases: Vec<Utf8PathBuf>,
+        /// Write json results to this file.
+        #[arg(long, short)]
+        output: Option<Utf8PathBuf>,
+    },
 }
 
 fn main() -> eyre::Result<ExitCode> {
@@ -98,6 +103,7 @@ fn main() -> eyre::Result<ExitCode> {
         }
         Command::Test {
             testcases: testcase_paths,
+            output,
         } => {
             let results = testcase_paths
                 .iter()
@@ -106,7 +112,15 @@ fn main() -> eyre::Result<ExitCode> {
                 .into_iter()
                 .map(|tc| tc.eval())
                 .collect::<Vec<Vec<AssertionResult>>>();
-            println!("{}", serde_json::to_string_pretty(&results)?);
+            if let Some(output_path) = output {
+                let mut out = OpenOptions::new()
+                    .create(true)
+                    .truncate(true)
+                    .write(true)
+                    .open(output_path)?;
+                serde_json::to_writer_pretty(&mut out, &results)?;
+                writeln!(out)?;
+            }
             if results.iter().flatten().all(AssertionResult::is_pass) {
                 Ok(ExitCode::SUCCESS)
             } else {

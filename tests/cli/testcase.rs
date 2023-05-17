@@ -2,6 +2,9 @@
 
 //! Tests for the `iamthat test` command.
 
+use assert_fs::prelude::PathAssert;
+use assert_fs::NamedTempFile;
+use indoc::indoc;
 // use assert_cmd::prelude::*;
 use glob::glob;
 use predicates::prelude::*;
@@ -11,21 +14,23 @@ use super::*;
 // A redundant test of just one example, just for an easy start.
 #[test]
 fn s3_basics() {
+    let outfile = NamedTempFile::new("results.json").unwrap();
     run()
         .args(["test", "example/testcase/s3_basics.json"])
+        .arg("--output")
+        .arg(outfile.path())
         .assert()
         .success()
-        .stdout(
-            "\
-[
-  [
-    \"Pass\",
-    \"Pass\"
-  ]
-]
-",
-        )
+        .stdout("")
         .stderr(predicate::str::contains("Assertion passed"));
+    outfile.assert(indoc! { "
+        [
+          [
+            \"Pass\",
+            \"Pass\"
+          ]
+        ]
+"});
 }
 
 #[test]
