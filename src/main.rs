@@ -12,8 +12,8 @@ use std::process::ExitCode;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
 use eyre::Context;
-use iamthat::testcase::TestCase;
-use tracing::{error, info, trace};
+use iamthat::testcase::{AssertionResult, TestCase};
+use tracing::{info, trace};
 use tracing_subscriber::prelude::*;
 
 use iamthat::effect::Effect;
@@ -101,23 +101,16 @@ fn main() -> eyre::Result<ExitCode> {
         } => {
             let results = testcase_paths
                 .iter()
-                .flat_map(|p| match TestCase::from_json_file(p) {
-                    Ok(tc) => {
-                        info!(?tc);
-                        tc.eval()
-                    }
-                    Err(err) => vec![Err(err)],
-                })
-                .inspect(|result| {
-                    if let Err(err) = result {
-                        error!(?err)
-                    }
-                })
-                .collect::<Vec<Result<()>>>();
-            if results.iter().any(Result::is_err) {
-                Ok(ExitCode::FAILURE)
-            } else {
+                .map(|path| TestCase::from_json_file(path))
+                .collect::<Result<Vec<TestCase>>>()?
+                .into_iter()
+                .map(|tc| tc.eval())
+                .collect::<Vec<Vec<AssertionResult>>>();
+            println!("{}", serde_json::to_string_pretty(&results)?);
+            if results.iter().flatten().all(AssertionResult::is_pass) {
                 Ok(ExitCode::SUCCESS)
+            } else {
+                Ok(ExitCode::FAILURE)
             }
         }
     }

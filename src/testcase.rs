@@ -5,10 +5,9 @@
 
 use camino::Utf8Path;
 use camino::Utf8PathBuf;
-use eyre::{eyre, Context};
+
 use serde::{Deserialize, Serialize};
-use tracing::info;
-use tracing::trace;
+use tracing::{info, info_span, warn};
 
 use crate::effect::Effect;
 use crate::json::FromJson;
@@ -25,7 +24,25 @@ pub struct TestCase {
     pub assertions: Vec<TestCaseAssertion>,
 }
 
+/// The result of evaluating one test assertion.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum AssertionResult {
+    Pass,
+    Fail,
+    Error(String),
+}
+
+/// A single assertion in a test case, containing a request and the expected
+/// effect, and optionally a comment.
+#[derive(Debug, Clone)]
+pub struct TestCaseAssertion {
+    pub comment: Option<String>,
+    pub request: Request,
+    pub expected: Effect,
+}
+
 impl TestCase {
+    /// Load a test case and any referenced files.
     pub fn from_json_file(path: &Utf8Path) -> Result<TestCase> {
         let testcase_json = TestCaseJson::from_json_file(path)?;
         let dir = path.parent().unwrap();
@@ -50,35 +67,46 @@ impl TestCase {
     }
 
     /// Evaluate all the assertions in this test case.
-    pub fn eval(&self) -> Vec<Result<()>> {
+    pub fn eval(&self) -> Vec<AssertionResult> {
         self.assertions
             .iter()
             .enumerate()
-            .map(|(i, TestCaseAssertion { request, expected, comment })| {
-                trace!(?request, ?expected, ?comment, "Evaluated assertion {i}");
-                let actual = self
-                    .scenario
-                    .eval(request)
-                    .with_context(|| format!("Failed to evaluate assertion {i}"))?;
-                if actual == *expected {
-                    info!(?actual, ?expected, ?request, "Assertion {i} passed");
-                    Ok(())
-                } else {
-                    // TODO: Maybe distinguish that "we successfully evaluated the test and it failed"?
-                    Err(eyre!(
-                        "Expected {expected:?} but got {actual:?} for assertion {i}, request {request:?}",
-                    ))
-                }
-            })
+            .map(
+                |(
+                    i,
+                    TestCaseAssertion {
+                        request,
+                        expected,
+                        comment,
+                    },
+                )| {
+                    let _span =
+                        info_span!("Evaluate test assertion", ?request, ?expected, ?comment, ?i,)
+                            .entered();
+                    match self.scenario.eval(request) {
+                        Err(err) => {
+                            warn!(?err, "Error evaluating test assertion");
+                            AssertionResult::Error(err.to_string())
+                        }
+                        Ok(actual) if actual == *expected => {
+                            info!("Assertion passed");
+                            AssertionResult::Pass
+                        }
+                        Ok(_) => {
+                            info!("Assertion failed");
+                            AssertionResult::Fail
+                        }
+                    }
+                },
+            )
             .collect()
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct TestCaseAssertion {
-    pub comment: Option<String>,
-    pub request: Request,
-    pub expected: Effect,
+impl AssertionResult {
+    pub fn is_pass(&self) -> bool {
+        matches!(self, AssertionResult::Pass)
+    }
 }
 
 /// A testcase file referencing a scenario file, and then a series of assertions.

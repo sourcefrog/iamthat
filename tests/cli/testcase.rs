@@ -15,10 +15,17 @@ fn s3_basics() {
         .args(["test", "example/testcase/s3_basics.json"])
         .assert()
         .success()
-        .stderr(
-            predicate::str::contains("Assertion 0 passed")
-                .and(predicate::str::contains("Assertion 1 passed")),
-        );
+        .stdout(
+            "\
+[
+  [
+    \"Pass\",
+    \"Pass\"
+  ]
+]
+",
+        )
+        .stderr(predicate::str::contains("Assertion passed"));
 }
 
 #[test]
