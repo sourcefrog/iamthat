@@ -16,6 +16,8 @@ use crate::scenario::Scenario;
 use crate::Request;
 use crate::Result;
 
+/// A test case containing a scenario (policies and resources) and a series of
+/// assertions (requests and expected effects).
 #[derive(Debug, Clone)]
 pub struct TestCase {
     pub comment: Option<String>,
@@ -47,6 +49,7 @@ impl TestCase {
         })
     }
 
+    /// Evaluate all the assertions in this test case.
     pub fn eval(&self) -> Vec<Result<()>> {
         self.assertions
             .iter()
@@ -87,7 +90,7 @@ pub struct TestCaseJson {
     pub assertions: Vec<TestCaseAssertionJson>,
 }
 
-/// An assertino in a testcase file, referencing a request file and giving the
+/// An assertion in a testcase file, referencing a request file and giving the
 /// expected effect.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
