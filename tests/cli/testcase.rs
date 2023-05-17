@@ -2,12 +2,13 @@
 
 //! Tests for the `iamthat test` command.
 
-use assert_fs::prelude::PathAssert;
+use std::str::FromStr;
+
+use assert_fs::prelude::*;
 use assert_fs::NamedTempFile;
-use indoc::indoc;
-// use assert_cmd::prelude::*;
 use glob::glob;
 use predicates::prelude::*;
+use serde_json::{json, Value};
 
 use super::*;
 
@@ -23,14 +24,17 @@ fn s3_basics() {
         .success()
         .stdout("")
         .stderr(predicate::str::contains("Assertion passed"));
-    outfile.assert(indoc! { "
-        [
-          [
-            \"Pass\",
-            \"Pass\"
-          ]
-        ]
-"});
+    outfile.assert(predicate::function(|s: &str| {
+        Value::from_str(s).unwrap()
+            == json! {
+                    [
+                      [
+                        "Pass",
+                        "Pass"
+                      ]
+                    ]
+            }
+    }));
 }
 
 #[test]
