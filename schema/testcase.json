@@ -1,0 +1,30 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sourcefrog.net/schemas/iamthat/2023-05-16.json",
+    "type": "object",
+    "properties": {
+        "Comment": {
+            "type": "string"
+        },
+        "Scenario": {
+            "type": "string"
+        },
+        "Assertions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "Request": {
+                        "type": "string"
+                    },
+                    "Expected": {
+                        "type": "string"
+                    },
+                    "Comment": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
