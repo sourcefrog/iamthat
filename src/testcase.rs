@@ -6,6 +6,7 @@
 use camino::Utf8Path;
 use camino::Utf8PathBuf;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tracing::{info, info_span, warn};
 
@@ -110,20 +111,20 @@ impl AssertionResult {
 }
 
 /// A testcase file referencing a scenario file, and then a series of assertions.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct TestCaseJson {
     pub comment: Option<String>,
-    pub scenario: Utf8PathBuf,
+    pub scenario: String, // TODO: Utf8PathBuf when <https://github.com/GREsau/schemars/pull/214> is merged
     pub assertions: Vec<TestCaseAssertionJson>,
 }
 
 /// An assertion in a testcase file, referencing a request file and giving the
 /// expected effect.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct TestCaseAssertionJson {
     pub comment: Option<String>,
-    pub request: Utf8PathBuf,
+    pub request: String,
     pub expected: Effect,
 }

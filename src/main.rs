@@ -10,9 +10,10 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use camino::Utf8PathBuf;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use eyre::Context;
-use iamthat::testcase::{AssertionResult, TestCase};
+use iamthat::testcase::{AssertionResult, TestCase, TestCaseJson};
+use schemars::schema_for;
 use tracing::{info, trace};
 use tracing_subscriber::prelude::*;
 
@@ -50,6 +51,13 @@ enum Command {
         output: Option<Utf8PathBuf>,
     },
 
+    /// Print the json schema for a file type.
+    JsonSchema {
+        /// The file type to print the schema for.
+        #[arg(long, short = 't')]
+        file_type: SchemaType,
+    },
+
     /// Evaluate all the requests in a testcase file against the policies
     /// in that scenario, and fail if the result is not as expected.
     Test {
@@ -58,6 +66,12 @@ enum Command {
         #[arg(long, short)]
         output: Option<Utf8PathBuf>,
     },
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
+enum SchemaType {
+    Request,
+    TestCase,
 }
 
 fn main() -> eyre::Result<ExitCode> {
@@ -100,6 +114,14 @@ fn main() -> eyre::Result<ExitCode> {
                 out.flush()?;
             }
             results_to_return_code(&effects)
+        }
+        Command::JsonSchema { file_type } => {
+            let schema = match file_type {
+                SchemaType::Request => schema_for!(Request),
+                SchemaType::TestCase => schema_for!(TestCaseJson),
+            };
+            println!("{}", serde_json::to_string_pretty(&schema)?);
+            Ok(ExitCode::SUCCESS)
         }
         Command::Test {
             testcases: testcase_paths,
