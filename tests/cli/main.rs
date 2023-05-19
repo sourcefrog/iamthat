@@ -3,6 +3,7 @@
 //! Tests for the iamthat command line.
 
 mod eval;
+mod generate_schemas;
 mod testcase;
 
 pub(crate) fn run() -> assert_cmd::Command {
