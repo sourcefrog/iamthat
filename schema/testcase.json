@@ -1,30 +1,70 @@
 {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://sourcefrog.net/schemas/iamthat/2023-05-16.json",
-    "type": "object",
-    "properties": {
-        "Comment": {
-            "type": "string"
-        },
-        "Scenario": {
-            "type": "string"
-        },
-        "Assertions": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "Request": {
-                        "type": "string"
-                    },
-                    "Expected": {
-                        "type": "string"
-                    },
-                    "Comment": {
-                        "type": "string"
-                    }
-                }
-            }
-        }
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TestCaseWithPaths",
+  "description": "A testcase consisting of a scenario referenced by path, and a series of assertions to evaluate.",
+  "type": "object",
+  "required": [
+    "Assertions",
+    "Scenario"
+  ],
+  "properties": {
+    "Assertions": {
+      "description": "A series of requests and expected effects.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/AssertionWithRequestPath"
+      }
+    },
+    "Comment": {
+      "description": "An optional comment explaining the test.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "Scenario": {
+      "description": "A path to a scenario file, relative to the testcase file.",
+      "type": "string"
     }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "AssertionWithRequestPath": {
+      "description": "An assertion in a testcase file, referencing a request file and giving the expected effect.",
+      "type": "object",
+      "required": [
+        "Expected",
+        "Request"
+      ],
+      "properties": {
+        "Comment": {
+          "description": "An optional comment explaining the assertion.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "Expected": {
+          "description": "The expected effect.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Effect"
+            }
+          ]
+        },
+        "Request": {
+          "description": "The path of the request file, relative to the testcase file.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Effect": {
+      "type": "string",
+      "enum": [
+        "Allow",
+        "Deny"
+      ]
+    }
+  }
 }

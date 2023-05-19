@@ -44,7 +44,7 @@ pub struct TestCaseAssertion {
 impl TestCase {
     /// Load a test case and any referenced files.
     pub fn from_json_file(path: &Utf8Path) -> Result<TestCase> {
-        let testcase_json = TestCaseJson::from_json_file(path)?;
+        let testcase_json = TestCaseWithPaths::from_json_file(path)?;
         let dir = path.parent().unwrap();
         let scenario = Scenario::from_json_file(&dir.join(&testcase_json.scenario))?;
         let assertions = testcase_json
@@ -110,21 +110,27 @@ impl AssertionResult {
     }
 }
 
-/// A testcase file referencing a scenario file, and then a series of assertions.
+/// A testcase consisting of a scenario referenced by path, and a series of assertions to evaluate.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
-pub struct TestCaseJson {
+pub struct TestCaseWithPaths {
+    /// An optional comment explaining the test.
     pub comment: Option<String>,
+    /// A path to a scenario file, relative to the testcase file.
     pub scenario: String, // TODO: Utf8PathBuf when <https://github.com/GREsau/schemars/pull/214> is merged
-    pub assertions: Vec<TestCaseAssertionJson>,
+    /// A series of requests and expected effects.
+    pub assertions: Vec<AssertionWithRequestPath>,
 }
 
 /// An assertion in a testcase file, referencing a request file and giving the
 /// expected effect.
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
-pub struct TestCaseAssertionJson {
+pub struct AssertionWithRequestPath {
+    /// An optional comment explaining the assertion.
     pub comment: Option<String>,
+    /// The path of the request file, relative to the testcase file.
     pub request: String,
+    /// The expected effect.
     pub expected: Effect,
 }

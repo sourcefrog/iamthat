@@ -5,8 +5,9 @@
 
 use std::collections::HashMap;
 
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8Path;
 use eyre::WrapErr;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tracing::{info, trace};
 
@@ -16,22 +17,21 @@ use crate::policy::Policy;
 use crate::request::Request;
 use crate::Result;
 
-/// A scenario file containing inline policies and requests.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+/// A scenario file containing policies (and later, other resources).
+#[derive(Debug, Clone, Deserialize, Serialize, Default, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct Scenario {
     /// Resource policies by name.
     pub resource_policies: HashMap<String, Policy>,
 }
 
-/// A scenario potential with references to other files containing requests
-/// and policies.
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+/// A scenario containing a configuration of policies referenced by path.
+#[derive(Debug, Clone, Deserialize, Serialize, Default, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
-pub struct ScenarioWithIncludes {
+pub struct ScenarioWithPaths {
     /// Policy objects, as a map from name to the relative path containing
     /// the policy.
-    pub resource_policy_files: HashMap<String, Utf8PathBuf>,
+    pub resource_policy_files: HashMap<String, String>, // TODO: Utf8PathBuf when supported
 }
 
 impl Scenario {
@@ -43,7 +43,7 @@ impl Scenario {
     /// Load a policy, following any inclusions of policies or requests
     /// from other files.
     pub fn from_json_file(path: &Utf8Path) -> Result<Scenario> {
-        let swi = ScenarioWithIncludes::from_json_file(path)?;
+        let swi = ScenarioWithPaths::from_json_file(path)?;
         info!(?swi);
 
         let mut resource_policies: HashMap<String, Policy> = HashMap::new();

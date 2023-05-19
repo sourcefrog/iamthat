@@ -12,7 +12,8 @@ use std::process::ExitCode;
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand, ValueEnum};
 use eyre::Context;
-use iamthat::testcase::{AssertionResult, TestCase, TestCaseJson};
+use iamthat::policy::Policy;
+use iamthat::testcase::{AssertionResult, TestCase, TestCaseWithPaths};
 use schemars::schema_for;
 use tracing::{info, trace};
 use tracing_subscriber::prelude::*;
@@ -20,7 +21,7 @@ use tracing_subscriber::prelude::*;
 use iamthat::effect::Effect;
 use iamthat::json::FromJson;
 use iamthat::request::Request;
-use iamthat::scenario::Scenario;
+use iamthat::scenario::{Scenario, ScenarioWithPaths};
 use iamthat::Result;
 
 #[derive(Parser, Debug)]
@@ -51,11 +52,11 @@ enum Command {
         output: Option<Utf8PathBuf>,
     },
 
-    /// Print the json schema for a file type.
+    /// Emit json schemas for all file types defined by iamthat.
     JsonSchema {
-        /// The file type to print the schema for.
-        #[arg(long, short = 't')]
-        file_type: SchemaType,
+        /// Write schemas into this directory.
+        #[arg(long, short = 'o', required = true)]
+        out_dir: Utf8PathBuf,
     },
 
     /// Evaluate all the requests in a testcase file against the policies
@@ -115,12 +116,23 @@ fn main() -> eyre::Result<ExitCode> {
             }
             results_to_return_code(&effects)
         }
-        Command::JsonSchema { file_type } => {
-            let schema = match file_type {
-                SchemaType::Request => schema_for!(Request),
-                SchemaType::TestCase => schema_for!(TestCaseJson),
-            };
-            println!("{}", serde_json::to_string_pretty(&schema)?);
+        Command::JsonSchema { out_dir } => {
+            for (name, schema) in [
+                ("policy", schema_for!(Policy)),
+                ("request", schema_for!(Request)),
+                ("scenario", schema_for!(ScenarioWithPaths)),
+                ("testcase", schema_for!(TestCaseWithPaths)),
+            ] {
+                let out_path = out_dir.join(format!("{}.json", name));
+                let mut out = OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(&out_path)
+                    .with_context(|| format!("Failed to open schema file {out_path:?}"))?;
+                serde_json::to_writer_pretty(&mut out, &schema)?;
+                writeln!(out)?;
+            }
             Ok(ExitCode::SUCCESS)
         }
         Command::Test {

@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Request",
+  "description": "The attributes of an AWS API request relevant to IAM policy evaluation.",
+  "type": "object",
+  "required": [
+    "Action"
+  ],
+  "properties": {
+    "Action": {
+      "description": "The AWS Action name, e.g. \"s3:ListAllMyBuckets\".",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

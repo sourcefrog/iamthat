@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ScenarioWithPaths",
+  "description": "A scenario containing a configuration of policies referenced by path.",
+  "type": "object",
+  "required": [
+    "ResourcePolicyFiles"
+  ],
+  "properties": {
+    "ResourcePolicyFiles": {
+      "description": "Policy objects, as a map from name to the relative path containing the policy.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

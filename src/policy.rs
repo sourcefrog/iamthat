@@ -10,6 +10,7 @@
 
 use std::str::FromStr;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, warn};
 
@@ -19,7 +20,7 @@ use crate::json::de_string_or_list;
 use crate::request::Request;
 
 /// An IAM policy document, containing some statements.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct Policy {
     /// The version of the IAM grammar, "2008-10-17" or "2012-10-17".
@@ -44,8 +45,9 @@ impl Policy {
     }
 }
 
-/// One statement in a policy.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+/// One statement in a policy, stating that requests matching some conditions
+/// should be either allowed or denied.
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct Statement {
     /// Statement id.
@@ -102,14 +104,15 @@ impl Statement {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+/// Matches a principal, or a list of principals, or states that they do not match.
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 pub enum PrincipalOrNot {
     Principal(Vec<PrincipalMapEntry>),
     NotPrincipal(Vec<String>),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 pub enum PrincipalMapEntry {
     AWS(Vec<String>),
@@ -119,7 +122,7 @@ pub enum PrincipalMapEntry {
 }
 
 // See <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html>
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, JsonSchema)]
 pub enum PolicyType {
     Resource,
     Identity,

@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Policy",
+  "description": "An IAM policy document, containing some statements.",
+  "type": "object",
+  "required": [
+    "Statement"
+  ],
+  "properties": {
+    "Id": {
+      "description": "A user-supplied id for the policy. Some services have special constraints on the id.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "Statement": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Statement"
+      }
+    },
+    "Version": {
+      "description": "The version of the IAM grammar, \"2008-10-17\" or \"2012-10-17\".",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Effect": {
+      "type": "string",
+      "enum": [
+        "Allow",
+        "Deny"
+      ]
+    },
+    "PrincipalMapEntry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "AWS"
+          ],
+          "properties": {
+            "AWS": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Federated"
+          ],
+          "properties": {
+            "Federated": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "CanonicalUser"
+          ],
+          "properties": {
+            "CanonicalUser": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Service"
+          ],
+          "properties": {
+            "Service": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Statement": {
+      "description": "One statement in a policy, stating that requests matching some conditions should be either allowed or denied.",
+      "type": "object",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "Principal"
+          ],
+          "properties": {
+            "Principal": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PrincipalMapEntry"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "NotPrincipal"
+          ],
+          "properties": {
+            "NotPrincipal": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "required": [
+        "Action",
+        "Effect",
+        "Resource"
+      ],
+      "properties": {
+        "Action": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Effect": {
+          "description": "The effect of this statement: allow or deny.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Effect"
+            }
+          ]
+        },
+        "Resource": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Sid": {
+          "description": "Statement id.\n\n\"For IAM policies, basic alphanumeric characters (A-Z,a-z,0-9) are the only allowed characters in the Sid value. Other AWS services that support resource policies may have other requirements for the Sid value. For example, some services require this value to be unique within an AWS account, and some services allow additional characters such as spaces in the Sid value.\"",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
