@@ -4,7 +4,6 @@
 //! and a request, and the expected result.
 
 use camino::Utf8Path;
-use camino::Utf8PathBuf;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -87,6 +86,7 @@ impl TestCase {
                     match self.scenario.eval(request) {
                         Err(err) => {
                             warn!(?err, "Error evaluating test assertion");
+                            // Flatten to a string to avoid problems seriializing the error type.
                             AssertionResult::Error(err.to_string())
                         }
                         Ok(actual) if actual == *expected => {
