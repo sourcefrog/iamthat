@@ -1,8 +1,23 @@
 {
   "json.schemas": [
     {
-      "fileMatch": ["/example/testcase/*.json"],
+      "fileMatch": [
+        "/example/testcase/*.json",
+        "/example/failing_testcase/*_test.json"
+      ],
       "url": "./schema/testcase.json"
+    },
+    {
+      "fileMatch": ["/example/request/*.json"],
+      "url": "./schema/request.json"
+    },
+    {
+      "fileMatch": ["/example/scenario/*.json"],
+      "url": "./schema/scenario.json"
+    },
+    {
+      "fileMatch": ["/example/*policy/*.json"],
+      "url": "./schema/policy.json"
     }
   ]
 }
