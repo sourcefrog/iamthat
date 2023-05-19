@@ -3,6 +3,7 @@
   "Id": "AllowS3ListAndPut",
   "Statement": [
     {
+      "Sid": "AllowS3ListAndPut",
       "Effect": "Allow",
       "Principal": [
         {
