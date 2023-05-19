@@ -12,10 +12,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 pub enum Principal {
-    AWS {
-        /// The ARN of the user, account, role, etc.
-        arn: String,
-    },
+    /// A user, account, role, etc, identified by an ARN.
+    ARN(String),
 }
 
 /// Matches a principal, or a list of principals, or states that they do not match.

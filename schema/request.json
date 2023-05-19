@@ -27,22 +27,14 @@
       "description": "One AWS principal.\n\nFor example this is the caller identity for a request.",
       "oneOf": [
         {
+          "description": "A user, account, role, etc, identified by an ARN.",
           "type": "object",
           "required": [
-            "AWS"
+            "ARN"
           ],
           "properties": {
-            "AWS": {
-              "type": "object",
-              "required": [
-                "arn"
-              ],
-              "properties": {
-                "arn": {
-                  "description": "The ARN of the user, account, role, etc.",
-                  "type": "string"
-                }
-              }
+            "ARN": {
+              "type": "string"
             }
           },
           "additionalProperties": false

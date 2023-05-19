@@ -36,9 +36,7 @@ fn deny_overrides_allow() {
 
     let request = Request {
         action: "s3:GetObject".to_string(),
-        principal: Principal::AWS {
-            arn: "arn:aws:iam::111122223333:user/mateo".to_owned(),
-        },
+        principal: Principal::ARN("arn:aws:iam::111122223333:user/mateo".to_owned()),
     };
 
     assert!(scenario.eval(&request).unwrap().is_deny());
@@ -51,9 +49,7 @@ fn scenario_with_no_policies_causes_implicit_deny() -> eyre::Result<()> {
 
     let request = Request {
         action: "aws-pca:IssueCertificate".to_string(),
-        principal: Principal::AWS {
-            arn: "arn:aws:iam::111122223333:user/mateo".to_owned(),
-        },
+        principal: Principal::ARN("arn:aws:iam::111122223333:user/mateo".to_owned()),
     };
 
     assert!(scenario.eval(&request).unwrap().is_deny());
@@ -83,9 +79,7 @@ fn lack_of_match_is_implicit_deny() -> eyre::Result<()> {
 
     let request = Request {
         action: "aws-pca:IssueCertificate".to_string(),
-        principal: Principal::AWS {
-            arn: "arn:aws:iam::111122223333:user/mateo".to_owned(),
-        },
+        principal: Principal::ARN("arn:aws:iam::111122223333:user/mateo".to_owned()),
     };
 
     assert!(scenario.eval(&request).unwrap().is_deny());

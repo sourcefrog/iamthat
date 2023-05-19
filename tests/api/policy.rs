@@ -92,9 +92,7 @@ fn action_star_matches_in_resource_policy() -> Result<()> {
     "#})?;
     let request = Request {
         action: "s3:ListBuckets".to_owned(),
-        principal: Principal::AWS {
-            arn: "arn:aws:iam::111122223333:user/mateo".to_owned(),
-        },
+        principal: Principal::ARN("arn:aws:iam::111122223333:user/mateo".to_owned()),
     };
     assert!(policy.allows(&request));
     Ok(())
@@ -116,9 +114,7 @@ fn action_glob_case_insensitive_in_resource_policy() -> Result<()> {
     })?;
     let request = Request {
         action: "S3:lISTbUCKETS".to_owned(),
-        principal: Principal::AWS {
-            arn: "arn:aws:iam::111122223333:user/mateo".to_owned(),
-        },
+        principal: Principal::ARN("arn:aws:iam::111122223333:user/mateo".to_owned()),
     };
     assert!(policy.allows(&request));
     assert!(!policy.denies(&request));
@@ -131,9 +127,7 @@ fn action_matches_action_glob_in_resource_policy() -> Result<()> {
     let policy: Policy = serde_json::from_str(&json)?;
     let request = Request {
         action: "s3:ListBuckets".to_owned(),
-        principal: Principal::AWS {
-            arn: "arn:aws:iam::111122223333:user/mateo".to_owned(),
-        },
+        principal: Principal::ARN("arn:aws:iam::111122223333:user/mateo".to_owned()),
     };
     assert!(policy.allows(&request));
     assert!(!policy.denies(&request));
@@ -146,9 +140,7 @@ fn action_does_not_match_resource_policy() -> Result<()> {
     let policy: Policy = serde_json::from_str(&json)?;
     let request = Request {
         action: "s3:CreateBucket".into(),
-        principal: Principal::AWS {
-            arn: "arn:aws:iam::111122223333:user/mateo".to_owned(),
-        },
+        principal: Principal::ARN("arn:aws:iam::111122223333:user/mateo".to_owned()),
     };
     assert!(!policy.allows(&request));
     assert!(!policy.denies(&request));
