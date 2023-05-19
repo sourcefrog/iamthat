@@ -1,5 +1,19 @@
 {
-    "ResourcePolicyFiles": {
+    "NamedPolicyFiles": {
         "AllowList": "../resource_policy/s3_list.json"
-    }
+    },
+    "Users": [
+        {
+            "UserName": "mateo",
+            "AttachedPolicies": [
+                "AllowList"
+            ],
+            "Tags": [
+                {
+                    "Key": "Department",
+                    "Value": "Engineering"
+                }
+            ]
+        }
+    ]
 }

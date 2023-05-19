@@ -15,14 +15,20 @@ use crate::effect::Effect;
 use crate::json::FromJson;
 use crate::policy::Policy;
 use crate::request::Request;
+use crate::user::User;
 use crate::Result;
 
 /// A scenario file containing policies (and later, other resources).
 #[derive(Debug, Clone, Deserialize, Serialize, Default, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "PascalCase")]
 pub struct Scenario {
-    /// Resource policies by name.
-    pub resource_policies: HashMap<String, Policy>,
+    /// User-defined managed (named) policies, indexed by name.
+    ///
+    /// The name can be used to attach them to an identity or resource.
+    pub named_policies: HashMap<String, Policy>,
+
+    /// Users.
+    pub users: Vec<User>,
 }
 
 /// A scenario containing a configuration of policies referenced by path.
@@ -31,7 +37,10 @@ pub struct Scenario {
 pub struct ScenarioWithPaths {
     /// Policy objects, as a map from name to the relative path containing
     /// the policy.
-    pub resource_policy_files: HashMap<String, String>, // TODO: Utf8PathBuf when supported
+    pub named_policy_files: HashMap<String, String>, // TODO: Utf8PathBuf when supported
+
+    /// Users.
+    pub users: Vec<User>,
 }
 
 impl Scenario {
@@ -47,7 +56,7 @@ impl Scenario {
         info!(?swi);
 
         let mut resource_policies: HashMap<String, Policy> = HashMap::new();
-        for (name, relpath) in swi.resource_policy_files {
+        for (name, relpath) in swi.named_policy_files {
             let path = path.parent().unwrap().join(relpath);
             info!(?name, ?path, "Load referenced resource policy file");
             let policy = Policy::from_json_file(&path)
@@ -55,7 +64,10 @@ impl Scenario {
             resource_policies.insert(name, policy);
         }
 
-        Ok(Scenario { resource_policies })
+        Ok(Scenario {
+            named_policies: resource_policies,
+            users: swi.users,
+        })
     }
 
     /// Evaluate a request against the policies and configuration of this
@@ -68,7 +80,7 @@ impl Scenario {
 
         // First, does any policy deny the request?
         if self
-            .resource_policies
+            .named_policies
             .iter()
             .any(|(_policy_type, policy)| policy.denies(request))
         {
@@ -79,7 +91,7 @@ impl Scenario {
         // type of principal in the request.
         // TODO: Only check relevant resource policies.
         if self
-            .resource_policies
+            .named_policies
             .values()
             .any(|policy| policy.allows(request))
         {
@@ -92,10 +104,10 @@ impl Scenario {
 
     pub fn add_resource_policy(&mut self, name: &str, policy: Policy) {
         assert!(
-            !self.resource_policies.contains_key(name),
+            !self.named_policies.contains_key(name),
             "Resource policy {} already exists",
             name
         );
-        self.resource_policies.insert(name.to_owned(), policy);
+        self.named_policies.insert(name.to_owned(), policy);
     }
 }

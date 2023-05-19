@@ -5,6 +5,8 @@ pub mod effect;
 pub mod json;
 pub mod policy;
 pub mod scenario;
+pub mod tag;
+pub mod user;
 
 pub mod request;
 pub mod testcase;

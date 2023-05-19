@@ -4,16 +4,86 @@
   "description": "A scenario containing a configuration of policies referenced by path.",
   "type": "object",
   "required": [
-    "ResourcePolicyFiles"
+    "NamedPolicyFiles",
+    "Users"
   ],
   "properties": {
-    "ResourcePolicyFiles": {
+    "NamedPolicyFiles": {
       "description": "Policy objects, as a map from name to the relative path containing the policy.",
       "type": "object",
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "Users": {
+      "description": "Users.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/User"
+      }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "Tag": {
+      "description": "A key-value tag.",
+      "type": "object",
+      "required": [
+        "Key",
+        "Value"
+      ],
+      "properties": {
+        "Key": {
+          "type": "string"
+        },
+        "Value": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "User": {
+      "description": "An IAM user.",
+      "type": "object",
+      "required": [
+        "UserName"
+      ],
+      "properties": {
+        "AttachedPolicies": {
+          "description": "Named policies attached to this user.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Path": {
+          "description": "The user's path.",
+          "default": "/",
+          "type": "string"
+        },
+        "Tags": {
+          "description": "The user's tags.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Tag"
+          }
+        },
+        "UserId": {
+          "description": "The user's id.",
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "UserName": {
+          "description": "The user's name.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }

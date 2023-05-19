@@ -13,7 +13,9 @@ use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand, ValueEnum};
 use eyre::Context;
 use iamthat::policy::Policy;
+use iamthat::tag::Tag;
 use iamthat::testcase::{AssertionResult, TestCase, TestCaseWithPaths};
+use iamthat::user::User;
 use schemars::schema_for;
 use tracing::{info, trace};
 use tracing_subscriber::prelude::*;
@@ -121,7 +123,9 @@ fn main() -> eyre::Result<ExitCode> {
                 ("policy", schema_for!(Policy)),
                 ("request", schema_for!(Request)),
                 ("scenario", schema_for!(ScenarioWithPaths)),
+                ("tag", schema_for!(Tag)),
                 ("testcase", schema_for!(TestCaseWithPaths)),
+                ("user", schema_for!(User)),
             ] {
                 let out_path = out_dir.join(format!("{}.json", name));
                 let mut out = OpenOptions::new()

@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tag",
+  "description": "A key-value tag.",
+  "type": "object",
+  "required": [
+    "Key",
+    "Value"
+  ],
+  "properties": {
+    "Key": {
+      "type": "string"
+    },
+    "Value": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
