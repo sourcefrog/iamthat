@@ -17,6 +17,7 @@ use tracing::{debug, warn};
 use crate::action::ActionGlob;
 use crate::effect::Effect;
 use crate::json::de_string_or_list;
+use crate::principal::PrincipalOrNot;
 use crate::request::Request;
 
 /// An IAM policy document, containing some statements.
@@ -102,23 +103,6 @@ impl Statement {
     pub fn denies(&self, request: &Request) -> bool {
         self.effect.is_deny() && self.matches(request)
     }
-}
-
-/// Matches a principal, or a list of principals, or states that they do not match.
-#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
-#[serde(rename_all = "PascalCase")]
-pub enum PrincipalOrNot {
-    Principal(Vec<PrincipalMapEntry>),
-    NotPrincipal(Vec<String>),
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
-#[serde(rename_all = "PascalCase")]
-pub enum PrincipalMapEntry {
-    AWS(Vec<String>),
-    Federated(Vec<String>),
-    CanonicalUser(Vec<String>),
-    Service(Vec<String>),
 }
 
 // See <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html>

@@ -38,6 +38,7 @@
       ]
     },
     "PrincipalMapEntry": {
+      "description": "Some principals, all of the same type, e.g. a list of AWS account ids.",
       "oneOf": [
         {
           "type": "object",

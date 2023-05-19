@@ -4,12 +4,13 @@ pub mod action;
 pub mod effect;
 pub mod json;
 pub mod policy;
+pub mod principal;
+pub mod request;
 pub mod scenario;
 pub mod tag;
+pub mod testcase;
 pub mod user;
 
-pub mod request;
-pub mod testcase;
 pub use request::Request;
 
 // TODO: Maybe a more specific and structured error type, to make this

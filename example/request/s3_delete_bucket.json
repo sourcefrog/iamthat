@@ -1,3 +1,8 @@
 {
-    "Action": "s3:DeleteBucket"
+    "Action": "s3:DeleteBucket",
+    "Principal": {
+        "AWS": {
+            "arn": "arn:aws:iam::111122223333:user/mateo"
+        }
+    }
 }

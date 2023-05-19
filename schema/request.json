@@ -4,13 +4,50 @@
   "description": "The attributes of an AWS API request relevant to IAM policy evaluation.",
   "type": "object",
   "required": [
-    "Action"
+    "Action",
+    "Principal"
   ],
   "properties": {
     "Action": {
       "description": "The AWS Action name, e.g. \"s3:ListAllMyBuckets\".",
       "type": "string"
+    },
+    "Principal": {
+      "description": "The principal issuing the request.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Principal"
+        }
+      ]
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "Principal": {
+      "description": "One AWS principal.\n\nFor example this is the caller identity for a request.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "AWS"
+          ],
+          "properties": {
+            "AWS": {
+              "type": "object",
+              "required": [
+                "arn"
+              ],
+              "properties": {
+                "arn": {
+                  "description": "The ARN of the user, account, role, etc.",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
 }

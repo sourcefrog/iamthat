@@ -2,8 +2,6 @@
 
 //! `iamthat` command line tool: simulate/evaluate AWS requests against IAM policies.
 
-pub mod request;
-
 use std::fs::OpenOptions;
 use std::io::{stderr, Write};
 use std::path::PathBuf;

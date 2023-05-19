@@ -1,11 +1,14 @@
 {
   "Version": "2012-10-17",
+  "Id": "AllowS3ListAndPut",
   "Statement": [
     {
       "Effect": "Allow",
       "Principal": [
         {
-          "AWS": ["arn:aws:iam::111122223333:user/mateo"]
+          "AWS": [
+            "arn:aws:iam::111122223333:user/mateo"
+          ]
         }
       ],
       "Action": [
