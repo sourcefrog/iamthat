@@ -52,7 +52,7 @@ Quality of life:
 
 - [ ] Switch to using [json5] for policy files, to allow comments and trailing
   commas?
-- [ ] JSON schemas.
+- [x] JSON schemas.
 
 [json5]: https://json5.org/
 
