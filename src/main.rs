@@ -135,6 +135,7 @@ fn main() -> eyre::Result<ExitCode> {
                 serde_json::to_writer_pretty(&mut out, &schema)?;
                 writeln!(out)?;
             }
+            info!("Schemas written to {}", out_dir.canonicalize_utf8().expect("Canonicalize out_path"));
             Ok(ExitCode::SUCCESS)
         }
         Command::Test {
