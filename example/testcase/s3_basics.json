@@ -1,5 +1,6 @@
 {
     "Scenario": "../scenario/s3_list.json",
+    "Comment": "Matches actions against action globs, and shows that tests correctly assert requests can be allowed and denied.",
     "Assertions": [
         {
             "Request": "../request/s3_list.json",
