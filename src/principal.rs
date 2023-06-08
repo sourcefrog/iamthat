@@ -21,7 +21,7 @@ pub enum Principal {
 #[serde(rename_all = "PascalCase")]
 pub enum PrincipalOrNot {
     Principal(Vec<PrincipalMapEntry>),
-    NotPrincipal(Vec<String>), // TODO: Why not consistent?
+    NotPrincipal(Vec<String>), // TODO: Also a PrincipalMapEntry?
 }
 
 /// Some principals, all of the same type, e.g. a list of AWS account ids.

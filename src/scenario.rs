@@ -37,7 +37,7 @@ pub struct Scenario {
 pub struct ScenarioWithPaths {
     /// Policy objects, as a map from name to the relative path containing
     /// the policy.
-    pub named_policy_files: HashMap<String, String>, // TODO: Utf8PathBuf when supported
+    pub named_policy_files: HashMap<String, String>, // TODO: Utf8PathBuf when supported by Schemars?
 
     /// Users.
     pub users: Vec<User>,

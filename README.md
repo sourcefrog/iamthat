@@ -20,7 +20,8 @@ Policy types:
 - [x] Parse AWS IAM policy JSON.
 - [x] Resource policies.
 - [ ] Attach policies to resources.
-- [ ] Identity policies.
+- [ ] Inline role policies.
+- [ ] Attached role policies.
 - [ ] Service control policies.
 - [ ] Session policies.
 - [x] JSON scenario files to the tree containing all the policies and resources

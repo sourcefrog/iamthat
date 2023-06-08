@@ -16,5 +16,5 @@ pub struct Request {
     pub action: String,
     /// The principal issuing the request.
     pub principal: Principal,
-    // TODO: Resource, context, etc.
+    // TODO: Resource, source IP, and other context from <https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html#policy-eval-reqcontext>.
 }
