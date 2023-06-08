@@ -81,8 +81,8 @@ impl Scenario {
         // First, does any policy deny the request?
         if self
             .named_policies
-            .iter()
-            .any(|(_policy_type, policy)| policy.denies(request))
+            .values()
+            .any(|policy| policy.denies(request))
         {
             return Ok(Effect::Deny);
         }
