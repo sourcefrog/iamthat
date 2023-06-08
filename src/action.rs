@@ -15,13 +15,13 @@ pub enum ActionGlob {
 impl FromStr for ActionGlob {
     type Err = eyre::Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "*" {
+    fn from_str(action_str: &str) -> Result<Self, Self::Err> {
+        if action_str == "*" {
             return Ok(ActionGlob::Star);
         }
-        let (service, action) = s
+        let (service, action) = action_str
             .split_once(':')
-            .ok_or_else(|| eyre!("no colon in action pattern"))?;
+            .ok_or_else(|| eyre!("no colon in action pattern {action_str:?}"))?;
         let service_re = Regex::new(r"^[a-zA-Z0-9]+$").unwrap();
         if !service_re.is_match(service) {
             bail!("invalid service {service:?}");
@@ -36,7 +36,7 @@ impl FromStr for ActionGlob {
             })?;
             Ok(ActionGlob::Pattern(action_re))
         } else {
-            Ok(ActionGlob::Literal(s.to_owned()))
+            Ok(ActionGlob::Literal(action_str.to_owned()))
         }
     }
 }
