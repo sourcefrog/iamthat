@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use camino::Utf8Path;
+use camino::{Utf8Path, Utf8PathBuf};
 use eyre::WrapErr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -37,7 +37,7 @@ pub struct Scenario {
 pub struct ScenarioWithPaths {
     /// Policy objects, as a map from name to the relative path containing
     /// the policy.
-    pub named_policy_files: HashMap<String, String>, // TODO: Utf8PathBuf when supported by Schemars?
+    pub named_policy_files: HashMap<String, Utf8PathBuf>,
 
     /// Users.
     pub users: Vec<User>,

@@ -16,7 +16,7 @@
       }
     },
     "Path": {
-      "description": "The user's path.",
+      "description": "The user's path, e.g. to group them under `/eng/`.",
       "default": "/",
       "type": "string"
     },

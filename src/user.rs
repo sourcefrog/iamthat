@@ -18,13 +18,15 @@ pub struct User {
     // // TODO: How should we treat this if unset?
     // #[serde(default)]
     // pub arn: Option<String>,
-    /// The user's path.
+    /// The user's path, e.g. to group them under `/eng/`.
     #[serde(default = "slash")]
     pub path: String,
+
     // pub create_date: Option<String>,
     /// The user's tags.
     #[serde(default)]
     pub tags: Vec<Tag>,
+
     /// Named policies attached to this user.
     #[serde(default)]
     pub attached_policies: Vec<String>,

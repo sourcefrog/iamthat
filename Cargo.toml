@@ -14,12 +14,18 @@ eyre = "0.6"
 glob = "0.3.1"
 mutants = "0.0.3"
 regex = "1.7"
-schemars = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["json"] }
 tracing-test = { version = "0.2", features = ["no-env-filter"] }
+
+[dependencies.schemars]
+# Pull currently unmerged PR <https://github.com/GREsau/schemars/pull/214>
+version = "0.8"
+features = ["camino"]
+git = "https://github.com/dbanty/schemars/"
+branch = "camino"
 
 [dev-dependencies]
 assert_cmd = { version = "2.0", features = ["color", "color-auto"] }
